@@ -1,8 +1,8 @@
 #include <QBoxLayout>
 #include <QGridLayout>
-#include <filesystem>
 #include <QScrollArea>
 #include <QWidget>
+#include <filesystem>
 #include <qicon.h>
 #include <qwidget.h>
 #include <stack>
@@ -16,6 +16,7 @@ class Inode {
 
   private:
     void refresh();
+    void loadIcons();
 
     QWidget *window;
     QVBoxLayout *layout_main;
@@ -23,6 +24,8 @@ class Inode {
 
     QScrollArea *scroll_dir;
     QWidget *scroll_dir_wid;
+
+    QIcon dir_icon;
 
     std::string current_path;
     std::vector<std::filesystem::directory_entry> cached_entries;

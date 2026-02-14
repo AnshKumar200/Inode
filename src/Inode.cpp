@@ -17,6 +17,8 @@
 
 Inode::Inode() {
     current_path = "/home";
+    loadIcons();
+
     window = new QWidget;
     window->setFixedSize(1100, 600);
     layout_main = new QVBoxLayout(window);
@@ -49,6 +51,10 @@ Inode::Inode() {
     refresh();
 }
 
+void Inode::loadIcons() {
+    dir_icon = QIcon("../icons/dir.png");
+}
+
 void Inode::show() {
     window->setLayout(layout_main);
     window->setWindowTitle("Inode");
@@ -74,7 +80,7 @@ void Inode::refresh() {
         if (entry.is_directory()) {
             QPushButton *dir_item = new QPushButton(
                 QString::fromStdString(file_name), scroll_dir_wid);
-            dir_item->setIcon(QIcon("../icons/dir.png"));
+            dir_item->setIcon(dir_icon);
             dir_item->setIconSize(QSize(32, 32));
             dir_item->setFixedSize(100, 40);
             layout_dir->addWidget(dir_item, i / 10, i % 10);
