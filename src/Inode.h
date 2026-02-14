@@ -3,8 +3,10 @@
 #include <filesystem>
 #include <QScrollArea>
 #include <QWidget>
+#include <qicon.h>
 #include <qwidget.h>
 #include <stack>
+#include <string>
 #include <vector>
 
 class Inode {
@@ -22,6 +24,6 @@ class Inode {
     QScrollArea *scroll_dir;
     QWidget *scroll_dir_wid;
 
-    std::stack<std::string> path;
-    std::vector<std::filesystem::directory_entry> dir_list;
+    std::string current_path;
+    std::vector<std::filesystem::directory_entry> cached_entries;
 };

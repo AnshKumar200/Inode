@@ -7,6 +7,7 @@
 #include <QLayoutItem>
 #include <QPushButton>
 #include <QWidget>
+#include <filesystem>
 #include <qicon.h>
 #include <qnamespace.h>
 #include <qscrollarea.h>
@@ -15,6 +16,7 @@
 #include <qwidget.h>
 
 Inode::Inode() {
+    current_path = "/home";
     window = new QWidget;
     window->setFixedSize(1100, 600);
     layout_main = new QVBoxLayout(window);
@@ -24,8 +26,13 @@ Inode::Inode() {
     back->setFixedSize(100, 40);
     layout_main->addWidget(back);
     QObject::connect(back, &QPushButton::clicked, [this]() {
-        path.pop();
-        refresh();
+        std::filesystem::path current(current_path);
+        std::filesystem::path parent = current.parent_path();
+
+        if (parent != current) {
+            current_path = parent.string();
+            refresh();
+        }
     });
 
     scroll_dir = new QScrollArea;
@@ -38,8 +45,6 @@ Inode::Inode() {
     layout_dir = new QGridLayout(scroll_dir_wid);
     layout_dir->setAlignment(Qt::AlignTop);
     layout_main->addWidget(scroll_dir);
-
-    path.push("/home");
 
     refresh();
 }
@@ -59,27 +64,29 @@ void Inode::refresh() {
         delete child;
     }
 
-    dir_list = get_names(path);
+    cached_entries.clear();
+    cached_entries = get_names(current_path);
 
-    for (int i = 0; i < dir_list.size(); i++) {
-        if (dir_list[i].is_directory()) {
-            QPushButton *dir_item = new QPushButton(scroll_dir_wid);
+    for (int i = 0; i < cached_entries.size(); i++) {
+        const auto &entry = cached_entries[i];
+        const std::string file_name = entry.path().filename().string();
+
+        if (entry.is_directory()) {
+            QPushButton *dir_item = new QPushButton(
+                QString::fromStdString(file_name), scroll_dir_wid);
             dir_item->setIcon(QIcon("../icons/dir.png"));
             dir_item->setIconSize(QSize(32, 32));
-            dir_item->setText(
-                QString::fromStdString(dir_list[i].path().filename()));
             dir_item->setFixedSize(100, 40);
-
             layout_dir->addWidget(dir_item, i / 10, i % 10);
 
-            QObject::connect(dir_item, &QPushButton::clicked, [this, i]() {
-                path.push(dir_list[i].path().filename());
-                refresh();
-            });
+            QObject::connect(dir_item, &QPushButton::clicked,
+                             [this, path = entry.path().string()]() {
+                                 current_path = path;
+                                 refresh();
+                             });
         } else {
-            QLabel *item = new QLabel(window);
-            item->setText(
-                QString::fromStdString(dir_list[i].path().filename()));
+            QLabel *item =
+                new QLabel(QString::fromStdString(file_name), scroll_dir_wid);
             item->setFixedSize(100, 40);
             layout_dir->addWidget(item, i / 10, i % 10);
         }
