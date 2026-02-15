@@ -6,12 +6,16 @@
 #include <QLabel>
 #include <QLayoutItem>
 #include <QPushButton>
+#include <QScreen>
 #include <QWidget>
 #include <filesystem>
 #include <qabstractitemmodel.h>
+#include <qcursor.h>
+#include <qguiapplication.h>
 #include <qicon.h>
 #include <qlistview.h>
 #include <qnamespace.h>
+#include <qpoint.h>
 #include <qscrollarea.h>
 #include <qsize.h>
 #include <qsizepolicy.h>
@@ -23,7 +27,7 @@ Inode::Inode() {
     loadIcons();
 
     window = new QWidget;
-    window->setFixedSize(1100, 600);
+    window->setFixedSize(1050, 900);
     layout_main = new QVBoxLayout(window);
     layout_main->setAlignment(Qt::AlignTop);
 
@@ -42,13 +46,12 @@ Inode::Inode() {
 
     list_view = new QListView;
     list_view->setViewMode(QListView::IconMode);
-    list_view->setGridSize(QSize(100, 60));
-    list_view->setIconSize(QSize(32, 32));
+    list_view->setGridSize(QSize(100, 80));
+    list_view->setIconSize(QSize(48, 48));
     list_view->setWrapping(true);
     list_view->setResizeMode(QListView::Adjust);
     list_view->setSpacing(10);
     list_view->setUniformItemSizes(true);
-    //    list_view->setFlowDirection(QListView::LeftToRight);
 
     model = new QStandardItemModel;
     list_view->setModel(model);
@@ -57,7 +60,29 @@ Inode::Inode() {
     refresh();
 }
 
-void Inode::loadIcons() { dir_icon = QIcon("../icons/dir.png"); }
+void Inode::loadIcons() {
+    dir_icon = QIcon("../icons/dir.png");
+    default_icon = QIcon("../icons/text.png");
+
+    extension_icons[".txt"] = QIcon("../icons/txt.png");
+    extension_icons[".pdf"] = QIcon("../icons/pdf.png");
+    extension_icons[".doc"] = QIcon("../icons/doc.png");
+    extension_icons[".xls"] = QIcon("../icons/excel.png");
+    extension_icons[".ppt"] = QIcon("../icons/ppt.png");
+
+    extension_icons[".mp3"] = QIcon("../icons/mp3.png");
+    extension_icons[".mp4"] = QIcon("../icons/video.png");
+    extension_icons[".mkv"] = QIcon("../icons/video.png");
+
+    extension_icons[".png"] = QIcon("../icons/image.png");
+    extension_icons[".jpg"] = QIcon("../icons/image.png");
+    extension_icons[".jpeg"] = QIcon("../icons/image.png");
+    extension_icons[".svg"] = QIcon("../icons/svg.png");
+
+    extension_icons[".zip"] = QIcon("../icons/zip.png");
+    extension_icons[".js"] = QIcon("../icons/javascript.png");
+    extension_icons[".css"] = QIcon("../icons/css.png");
+}
 
 void Inode::show() {
     window->setLayout(layout_main);
@@ -81,7 +106,13 @@ void Inode::refresh() {
             item->setData(QString::fromStdString(entry.path().string()),
                           Qt::UserRole);
         } else {
-            item->setIcon(dir_icon);
+            std::string ext = entry.path().extension().string();
+
+            auto it = extension_icons.find(ext);
+            if (it != extension_icons.end()) {
+                item->setIcon(it->second);
+            } else
+                item->setIcon(default_icon);
         }
         item->setTextAlignment(Qt::AlignCenter);
         model->appendRow(item);
