@@ -8,11 +8,14 @@
 #include <QPushButton>
 #include <QWidget>
 #include <filesystem>
+#include <qabstractitemmodel.h>
 #include <qicon.h>
+#include <qlistview.h>
 #include <qnamespace.h>
 #include <qscrollarea.h>
 #include <qsize.h>
 #include <qsizepolicy.h>
+#include <qstandarditemmodel.h>
 #include <qwidget.h>
 
 Inode::Inode() {
@@ -27,33 +30,34 @@ Inode::Inode() {
     QPushButton *back = new QPushButton("Back", window);
     back->setFixedSize(100, 40);
     layout_main->addWidget(back);
+
     QObject::connect(back, &QPushButton::clicked, [this]() {
         std::filesystem::path current(current_path);
         std::filesystem::path parent = current.parent_path();
-
         if (parent != current) {
             current_path = parent.string();
             refresh();
         }
     });
 
-    scroll_dir = new QScrollArea;
-    scroll_dir_wid = new QWidget;
+    list_view = new QListView;
+    list_view->setViewMode(QListView::IconMode);
+    list_view->setGridSize(QSize(100, 60));
+    list_view->setIconSize(QSize(32, 32));
+    list_view->setWrapping(true);
+    list_view->setResizeMode(QListView::Adjust);
+    list_view->setSpacing(10);
+    list_view->setUniformItemSizes(true);
+    //    list_view->setFlowDirection(QListView::LeftToRight);
 
-    scroll_dir->setWidget(scroll_dir_wid);
-    scroll_dir->setWidgetResizable(true);
-    scroll_dir->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-    layout_dir = new QGridLayout(scroll_dir_wid);
-    layout_dir->setAlignment(Qt::AlignTop);
-    layout_main->addWidget(scroll_dir);
+    model = new QStandardItemModel;
+    list_view->setModel(model);
+    layout_main->addWidget(list_view);
 
     refresh();
 }
 
-void Inode::loadIcons() {
-    dir_icon = QIcon("../icons/dir.png");
-}
+void Inode::loadIcons() { dir_icon = QIcon("../icons/dir.png"); }
 
 void Inode::show() {
     window->setLayout(layout_main);
@@ -62,39 +66,34 @@ void Inode::show() {
 }
 
 void Inode::refresh() {
-    QLayoutItem *child;
-    while ((child = layout_dir->takeAt(0)) != nullptr) {
-        if (child->widget()) {
-            delete child->widget();
-        }
-        delete child;
-    }
+    model->clear();
 
     cached_entries.clear();
     cached_entries = get_names(current_path);
 
-    for (int i = 0; i < cached_entries.size(); i++) {
-        const auto &entry = cached_entries[i];
-        const std::string file_name = entry.path().filename().string();
+    for (const auto &entry : cached_entries) {
+        QString file_name =
+            QString::fromStdString(entry.path().filename().string());
+        QStandardItem *item = new QStandardItem(file_name);
 
         if (entry.is_directory()) {
-            QPushButton *dir_item = new QPushButton(
-                QString::fromStdString(file_name), scroll_dir_wid);
-            dir_item->setIcon(dir_icon);
-            dir_item->setIconSize(QSize(32, 32));
-            dir_item->setFixedSize(100, 40);
-            layout_dir->addWidget(dir_item, i / 10, i % 10);
-
-            QObject::connect(dir_item, &QPushButton::clicked,
-                             [this, path = entry.path().string()]() {
-                                 current_path = path;
-                                 refresh();
-                             });
+            item->setIcon(dir_icon);
+            item->setData(QString::fromStdString(entry.path().string()),
+                          Qt::UserRole);
         } else {
-            QLabel *item =
-                new QLabel(QString::fromStdString(file_name), scroll_dir_wid);
-            item->setFixedSize(100, 40);
-            layout_dir->addWidget(item, i / 10, i % 10);
+            item->setIcon(dir_icon);
         }
+        item->setTextAlignment(Qt::AlignCenter);
+        model->appendRow(item);
     }
+    QObject::disconnect(list_view, nullptr, nullptr, nullptr);
+    QObject::connect(
+        list_view, &QListView::doubleClicked, [this](const QModelIndex &index) {
+            QString path =
+                model->item(index.row())->data(Qt::UserRole).toString();
+            if (!path.isEmpty()) {
+                current_path = path.toStdString();
+                refresh();
+            }
+        });
 }

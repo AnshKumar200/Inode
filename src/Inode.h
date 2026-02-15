@@ -1,11 +1,12 @@
 #include <QBoxLayout>
 #include <QGridLayout>
+#include <QListView>
 #include <QScrollArea>
+#include <QStandardItemModel>
 #include <QWidget>
 #include <filesystem>
 #include <qicon.h>
 #include <qwidget.h>
-#include <stack>
 #include <string>
 #include <vector>
 
@@ -20,10 +21,8 @@ class Inode {
 
     QWidget *window;
     QVBoxLayout *layout_main;
-    QGridLayout *layout_dir;
-
-    QScrollArea *scroll_dir;
-    QWidget *scroll_dir_wid;
+    QListView *list_view;
+    QStandardItemModel *model;
 
     QIcon dir_icon;
 
