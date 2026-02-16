@@ -8,9 +8,12 @@
 #include <QPushButton>
 #include <QScreen>
 #include <QWidget>
+#include <QDesktopServices>
+#include <QUrl>
 #include <filesystem>
 #include <qabstractitemmodel.h>
 #include <qcursor.h>
+#include <qdesktopservices.h>
 #include <qguiapplication.h>
 #include <qicon.h>
 #include <qlistview.h>
@@ -101,10 +104,14 @@ void Inode::refresh() {
             QString::fromStdString(entry.path().filename().string());
         QStandardItem *item = new QStandardItem(file_name);
 
-        if (entry.is_directory()) {
+        QString full_path = QString::fromStdString(entry.path().string());
+        bool is_dir = entry.is_directory();
+
+        item->setData(full_path, Qt::UserRole);
+        item->setData(is_dir, Qt::UserRole + 1);
+
+        if (is_dir) {
             item->setIcon(dir_icon);
-            item->setData(QString::fromStdString(entry.path().string()),
-                          Qt::UserRole);
         } else {
             std::string ext = entry.path().extension().string();
 
@@ -117,14 +124,21 @@ void Inode::refresh() {
         item->setTextAlignment(Qt::AlignCenter);
         model->appendRow(item);
     }
-    QObject::disconnect(list_view, nullptr, nullptr, nullptr);
+    QObject::disconnect(list_view, &QListView::doubleClicked, nullptr, nullptr);
     QObject::connect(
         list_view, &QListView::doubleClicked, [this](const QModelIndex &index) {
             QString path =
                 model->item(index.row())->data(Qt::UserRole).toString();
+            bool is_dir =
+                model->item(index.row())->data(Qt::UserRole + 1).toBool();
+
             if (!path.isEmpty()) {
-                current_path = path.toStdString();
-                refresh();
+                if (is_dir) {
+                    current_path = path.toStdString();
+                    refresh();
+                } else {
+                    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+                }
             }
         });
 }
