@@ -5,8 +5,9 @@ Major focus on performance optimizations.
 
 ## Goals
 - [x] get base ui
-- optimizations
-- open files
-- drag and drop support
+- [x] optimizations
+- [x] open files
 - preview images/videos
+- qol additons + smoothing
+- drag and drop support
 - optimizations
