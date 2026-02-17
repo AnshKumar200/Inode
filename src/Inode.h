@@ -5,7 +5,11 @@
 #include <QStandardItemModel>
 #include <QWidget>
 #include <filesystem>
+#include <qabstractitemmodel.h>
+#include <qboxlayout.h>
 #include <qicon.h>
+#include <qlabel.h>
+#include <qscrollarea.h>
 #include <qwidget.h>
 #include <string>
 #include <unordered_map>
@@ -18,6 +22,7 @@ class Inode {
 
   private:
     void refresh();
+    void updatePreview(const QModelIndex &index);
 
     std::unordered_map<std::string, QIcon> extension_icons;
     QIcon dir_icon;
@@ -26,8 +31,11 @@ class Inode {
 
     QWidget *window;
     QVBoxLayout *layout_main;
+    QHBoxLayout *layout_content;
     QListView *list_view;
     QStandardItemModel *model;
+    QLabel *preview_label;
+    QScrollArea *preview_scroll;
 
     std::string current_path;
     std::vector<std::filesystem::directory_entry> cached_entries;

@@ -2,22 +2,25 @@
 #include "get_dir_names.h"
 
 #include <QBoxLayout>
+#include <QDesktopServices>
 #include <QGridLayout>
 #include <QLabel>
 #include <QLayoutItem>
 #include <QPushButton>
 #include <QScreen>
-#include <QWidget>
-#include <QDesktopServices>
 #include <QUrl>
+#include <QWidget>
 #include <filesystem>
 #include <qabstractitemmodel.h>
+#include <qboxlayout.h>
 #include <qcursor.h>
 #include <qdesktopservices.h>
 #include <qguiapplication.h>
 #include <qicon.h>
+#include <qlabel.h>
 #include <qlistview.h>
 #include <qnamespace.h>
+#include <qpixmap.h>
 #include <qpoint.h>
 #include <qscrollarea.h>
 #include <qsize.h>
@@ -30,7 +33,7 @@ Inode::Inode() {
     loadIcons();
 
     window = new QWidget;
-    window->setFixedSize(1050, 900);
+    window->resize(1200, 900);
     layout_main = new QVBoxLayout(window);
     layout_main->setAlignment(Qt::AlignTop);
 
@@ -47,6 +50,8 @@ Inode::Inode() {
         }
     });
 
+    layout_content = new QHBoxLayout;
+
     list_view = new QListView;
     list_view->setViewMode(QListView::IconMode);
     list_view->setGridSize(QSize(100, 80));
@@ -58,8 +63,16 @@ Inode::Inode() {
 
     model = new QStandardItemModel;
     list_view->setModel(model);
-    layout_main->addWidget(list_view);
+    layout_content->addWidget(list_view, 2);
 
+    preview_scroll = new QScrollArea;
+    preview_scroll->setWidgetResizable(true);
+    preview_label = new QLabel;
+    preview_label->setAlignment(Qt::AlignCenter);
+    preview_scroll->setWidget(preview_label);
+    layout_content->addWidget(preview_scroll, 1);
+
+    layout_main->addLayout(layout_content);
     refresh();
 }
 
@@ -93,8 +106,37 @@ void Inode::show() {
     window->show();
 }
 
+void Inode::updatePreview(const QModelIndex &index) {
+    QString path = model->item(index.row())->data(Qt::UserRole).toString();
+    bool is_dir = model->item(index.row())->data(Qt::UserRole + 1).toBool();
+
+    if (is_dir) {
+        preview_label->setPixmap(QPixmap());
+        preview_label->setText("Directory");
+        return;
+    }
+
+    std::string file_path = path.toStdString();
+    std::string ext = std::filesystem::path(file_path).extension().string();
+
+    if (ext == ".png" || ext == ".jpg" || ext == "jpeg" || ext == ".gif") {
+        QPixmap pixmap(path);
+        if (!pixmap.isNull()) {
+            QPixmap scaled =
+                pixmap.scaledToHeight(400, Qt::SmoothTransformation);
+            preview_label->setPixmap(scaled);
+            return;
+        }
+    }
+
+    preview_label->setPixmap(QPixmap());
+    preview_label->setText("File");
+}
+
 void Inode::refresh() {
     model->clear();
+    preview_label->setPixmap(QPixmap());
+    preview_label->setText("Select a file to preview");
 
     cached_entries.clear();
     cached_entries = get_names(current_path);
@@ -125,6 +167,8 @@ void Inode::refresh() {
         model->appendRow(item);
     }
     QObject::disconnect(list_view, &QListView::doubleClicked, nullptr, nullptr);
+    QObject::disconnect(list_view, &QListView::clicked, nullptr, nullptr);
+
     QObject::connect(
         list_view, &QListView::doubleClicked, [this](const QModelIndex &index) {
             QString path =
@@ -141,4 +185,8 @@ void Inode::refresh() {
                 }
             }
         });
+
+    QObject::connect(
+        list_view, &QListView::clicked,
+        [this](const QModelIndex &index) { updatePreview(index); });
 }

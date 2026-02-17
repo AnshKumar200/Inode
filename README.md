@@ -7,7 +7,10 @@ Major focus on performance optimizations.
 - [x] get base ui
 - [x] optimizations
 - [x] open files
-- preview images/videos
+- [x] preview images
 - qol additons + smoothing
 - drag and drop support
 - optimizations
+- preview videos
+- searching
+- sort and filters
