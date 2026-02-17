@@ -119,7 +119,7 @@ void Inode::updatePreview(const QModelIndex &index) {
     std::string file_path = path.toStdString();
     std::string ext = std::filesystem::path(file_path).extension().string();
 
-    if (ext == ".png" || ext == ".jpg" || ext == "jpeg" || ext == ".gif") {
+    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif") {
         QPixmap pixmap(path);
         if (!pixmap.isNull()) {
             QPixmap scaled =
