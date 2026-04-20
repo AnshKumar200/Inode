@@ -36,6 +36,7 @@ class Inode {
     QStandardItemModel *model;
     QLabel *preview_label;
     QScrollArea *preview_scroll;
+    QHBoxLayout *layout_bar;
 
     std::string current_path;
     std::vector<std::filesystem::directory_entry> cached_entries;

@@ -37,10 +37,11 @@ Inode::Inode() {
     layout_main = new QVBoxLayout(window);
     layout_main->setAlignment(Qt::AlignTop);
 
+    layout_bar = new QHBoxLayout;
+    layout_bar->setAlignment(Qt::AlignLeft);
+
     QPushButton *back = new QPushButton("Back", window);
     back->setFixedSize(100, 40);
-    layout_main->addWidget(back);
-
     QObject::connect(back, &QPushButton::clicked, [this]() {
         std::filesystem::path current(current_path);
         std::filesystem::path parent = current.parent_path();
@@ -49,6 +50,15 @@ Inode::Inode() {
             refresh();
         }
     });
+    layout_bar->addWidget(back);
+
+    QPushButton *home = new QPushButton("Home", window);
+    home->setFixedSize(100, 40);
+    layout_bar->addWidget(back);
+
+
+    layout_main->addLayout(layout_bar);
+
 
     layout_content = new QHBoxLayout;
 
@@ -122,8 +132,12 @@ void Inode::updatePreview(const QModelIndex &index) {
     if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif") {
         QPixmap pixmap(path);
         if (!pixmap.isNull()) {
+            int max_width = preview_scroll->width() - 20;
+            int max_height = preview_scroll->width() - 20;
+
             QPixmap scaled =
-                pixmap.scaledToHeight(400, Qt::SmoothTransformation);
+                pixmap.scaledToWidth(max_width, Qt::SmoothTransformation);
+            if(scaled.height() > max_height) pixmap.scaledToHeight(max_height, Qt::SmoothTransformation);
             preview_label->setPixmap(scaled);
             return;
         }
